@@ -8,13 +8,13 @@ import (
 )
 
 type Options struct {
-	S3Key        string `long:"s3-key" required:"true"`
-	S3Secret     string `long:"s3-secret" required:"true"`
-	S3Region     string `long:"s3-region" default:"us-east-1"`
-	S3Bucket     string `long:"s3-bucket" required:"true"`
-	Prefix       string `long:"prefix" required:"true"`
-	ManifestPath string `long:"manifest" required:"true"`
-	Path         string `long:"path" required:"true"`
+	S3Key        string `long:"s3-key" description:"AWS access key" required:"true"`
+	S3Secret     string `long:"s3-secret" description:"AWS secret key" required:"true"`
+	S3Region     string `long:"s3-region" description:"AWS region" default:"us-east-1"`
+	S3Bucket     string `long:"s3-bucket" description:"S3 bucket name" required:"true"`
+	Prefix       string `long:"prefix" description:"S3 files prefix" required:"true"`
+	ManifestPath string `long:"manifest" description:"Path to manifest file (Gemfile.lock, etc)" required:"true"`
+	Path         string `long:"path" description:"Path to dependencies directory" required:"true"`
 	Key          string
 }
 
