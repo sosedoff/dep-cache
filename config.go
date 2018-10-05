@@ -49,8 +49,6 @@ func readConfig(path string) (*Config, error) {
 
 	newInput := replaceEnvVars(string(input))
 
-	fmt.Println(newInput)
-
 	cfg := &Config{}
 	if err := json.Unmarshal([]byte(newInput), cfg); err != nil {
 		return nil, err
