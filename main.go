@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -16,93 +19,115 @@ var (
 	s3bucket  string
 )
 
-func setupS3(opts *Options) {
+func setupS3(config *Config) {
 	sess, err := session.NewSession(&aws.Config{
-		Region:      aws.String(opts.S3Region),
-		Credentials: credentials.NewStaticCredentials(opts.S3Key, opts.S3Secret, ""),
+		Region: aws.String(config.S3.Region),
+		Credentials: credentials.NewStaticCredentials(
+			config.S3.Key, config.S3.Secret, ""),
 	})
 	if err != nil {
 		fatal(err)
 	}
 	s3session = sess
 	s3service = s3.New(s3session)
-	s3bucket = opts.S3Bucket
+	s3bucket = config.S3.Bucket
+}
+
+func perform(cache *Cache, command string) {
+	if err := cache.prepare(); err != nil {
+		log.Println("error:", err)
+		return
+	}
+
+	switch command {
+	case "upload":
+		if err := upload(cache); err != nil {
+			fmt.Println("error:", err)
+		}
+	case "download":
+		if err := download(cache); err != nil {
+			fmt.Println("error:", err)
+		}
+	}
 }
 
 func main() {
-	opts := initOptions()
+	args, opts := initOptions()
 	if opts == nil {
 		return
 	}
 
-	if len(os.Args) < 2 {
-		fatal("command required")
-	}
-
-	command := os.Args[1]
-
-	if err := prepare(opts); err != nil {
+	config, err := readConfig(opts.Config)
+	if err != nil {
 		fatal(err)
 	}
 
-	setupS3(opts)
+	setupS3(config)
 
-	switch command {
-	case "upload":
-		if err := upload(opts); err != nil {
-			fatal(err)
-		}
-	case "download":
-		if err := download(opts); err != nil {
-			fatal(err)
-		}
-	default:
-		fatal("invalid command")
+	if len(args) < 1 {
+		fatal("command required")
 	}
+
+	command := args[0]
+	if !(command == "upload" || command == "download") {
+		fatal("invalid command:" + command)
+	}
+
+	wg := &sync.WaitGroup{}
+	wg.Add(len(config.Caches))
+
+	for i := range config.Caches {
+		go func(c *Cache) {
+			defer wg.Done()
+			perform(c, command)
+		}(&config.Caches[i])
+	}
+
+	wg.Wait()
 }
 
-func upload(opts *Options) error {
-	debug("checking cache %s", opts.Key)
-	exists, err := s3exists(opts.Key)
+func upload(cache *Cache) error {
+	debug("checking %s", cache.Key)
+	exists, err := s3exists(cache.Key)
 	if err != nil {
 		return err
 	}
 	if exists {
-		debug("cache %s already exists, skipping upload", opts.Key)
+		debug("cache %s exists, skipping upload", cache.Key)
 		return nil
 	}
 
-	debug("preparing cache")
-	archivePath := filepath.Join("/tmp", opts.Key)
+	debug("preparing %s", cache.Key)
+	archivePath := filepath.Join("/tmp", cache.Key)
 	defer os.Remove(archivePath)
 
-	if err := archive(opts.Path, archivePath); err != nil {
+	if err := archive(cache.Path, archivePath); err != nil {
 		return err
 	}
 
-	debug("uploading cache")
-	return s3upload(opts.Key, archivePath)
+	debug("uploading %s", cache.Key)
+	return s3upload(cache.Key, archivePath)
 }
 
-func download(opts *Options) error {
-	archivePath := filepath.Join("/tmp", opts.Key)
+func download(cache *Cache) error {
+	archivePath := filepath.Join("/tmp", cache.Key)
 	defer os.Remove(archivePath)
 
-	debug("checking for cache %s", opts.Key)
-	exists, err := s3exists(opts.Key)
+	debug("checking %s", cache.Key)
+	exists, err := s3exists(cache.Key)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		debug("cache does not exist")
+		debug("cache %s not found", cache.Key)
 		return nil
 	}
 
-	debug("downloading cache")
-	if err := s3download(opts.Key, archivePath); err != nil {
+	debug("downloading %s", cache.Key)
+	if err := s3download(cache.Key, archivePath); err != nil {
 		return err
 	}
 
-	debug("extracting cache")
-	return extract(archivePath, opts.Path)
+	debug("extracting %s", cache.Key)
+	return extract(archivePath, cache.Path)
 }
