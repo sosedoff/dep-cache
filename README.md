@@ -7,10 +7,10 @@ Simple utility to cache dependencies to S3.
 ```json
 {
   "s3": {
-    "key": "... AWS access key ...",
-    "secret": "... AWS secret key ...",
-    "region": "us-east-1",
-    "bucket": "AWS bucket name"
+    "key": "$CACHE_AWS_KEY",
+    "secret": "$CACHE_AWS_SECRET",
+    "region": "$CACHE_S3_REGION",
+    "bucket": "$CACHE_S3_BUCKET"
   },
   "cache": [
     {
@@ -26,6 +26,8 @@ Simple utility to cache dependencies to S3.
   ]
 }
 ```
+
+Values of $CACHE_AWS_KEY/$CACHE_AWS_SECRET will be replaced with environment variables.
 
 ## Usage
 

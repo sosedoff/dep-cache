@@ -3,8 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"regexp"
 	"runtime"
+	"strings"
+)
+
+var (
+	reEnvVar = regexp.MustCompile(`(?i)\$([\w\d\_]+)`)
 )
 
 type Cache struct {
@@ -24,17 +31,31 @@ type Config struct {
 	Caches []Cache `json:"cache"`
 }
 
+func replaceEnvVars(input string) string {
+	matches := reEnvVar.FindAllStringSubmatch(input, -1)
+	if len(matches) > 0 {
+		for _, m := range matches {
+			input = strings.Replace(input, m[0], os.Getenv(m[1]), -1)
+		}
+	}
+	return input
+}
+
 func readConfig(path string) (*Config, error) {
-	file, err := os.Open(path)
+	input, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+
+	newInput := replaceEnvVars(string(input))
+
+	fmt.Println(newInput)
 
 	cfg := &Config{}
-	if err := json.NewDecoder(file).Decode(cfg); err != nil {
+	if err := json.Unmarshal([]byte(newInput), cfg); err != nil {
 		return nil, err
 	}
+
 	return cfg, nil
 }
 
