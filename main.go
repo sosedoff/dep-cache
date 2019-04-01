@@ -7,8 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
@@ -20,14 +19,25 @@ var (
 )
 
 func setupS3(config *Config) {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(config.S3.Region),
-		Credentials: credentials.NewStaticCredentials(
-			config.S3.Key, config.S3.Secret, ""),
-	})
+	sess, err := session.NewSession()
 	if err != nil {
 		fatal(err)
 	}
+
+	// Load region from metadata
+	meta := ec2metadata.New(sess)
+	if region, err := meta.Region(); err == nil {
+		config.S3.Region = region
+		sess.Config.Region = &region
+	}
+
+	if config.S3.Region == "" {
+		fatal("s3 region is reqiored")
+	}
+	if config.S3.Bucket == "" {
+		fatal("s3 bucket name is required")
+	}
+
 	s3session = sess
 	s3service = s3.New(s3session)
 	s3bucket = config.S3.Bucket
