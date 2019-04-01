@@ -28,11 +28,8 @@ func setupS3(config *Config) {
 	// Load region from metadata
 	meta := ec2metadata.New(sess)
 	if region, err := meta.Region(); err == nil {
-		// Only overwrite region if it's not set
-		if config.S3.Region == "" {
-			config.S3.Region = region
-			sess.Config.Region = &region
-		}
+		config.S3.Region = region
+		sess.Config.Region = &region
 	}
 
 	if config.S3.Region == "" {
