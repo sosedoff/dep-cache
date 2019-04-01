@@ -91,7 +91,9 @@ func main() {
 	}
 
 	command := args[0]
-	if !(command == "upload" || command == "download") {
+	commands := map[string]bool{"upload": true, "download": true, "reset": true}
+
+	if _, ok := commands[command]; !ok {
 		fatal("invalid command:" + command)
 	}
 
