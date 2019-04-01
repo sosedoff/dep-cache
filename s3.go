@@ -56,3 +56,17 @@ func s3download(key string, path string) error {
 
 	return err
 }
+
+func s3delete(key string) error {
+	_, err := s3service.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(s3bucket),
+		Key:    aws.String(key),
+	})
+	if err == nil {
+		return nil
+	}
+	if aerr, ok := err.(awserr.Error); ok && aerr.Code() == "NotFound" {
+		return nil
+	}
+	return err
+}

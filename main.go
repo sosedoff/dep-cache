@@ -70,6 +70,10 @@ func perform(cache *Cache, command string) {
 		if err := download(cache); err != nil {
 			fmt.Println("error:", err)
 		}
+	case "reset":
+		if err := reset(cache); err != nil {
+			fmt.Println("error:", err)
+		}
 	}
 }
 
@@ -154,4 +158,9 @@ func download(cache *Cache) error {
 
 	debug("extracting %s", cache.Key)
 	return extract(archivePath, cache.Path)
+}
+
+func reset(cache *Cache) error {
+	debug("deleteing %s", cache.Key)
+	return s3delete(cache.Key)
 }
