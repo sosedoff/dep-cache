@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -33,10 +32,10 @@ func setupS3(config *Config) {
 	}
 
 	if config.S3.Region == "" {
-		fatal("s3 region is reqiored")
+		fatal("region is not set")
 	}
 	if config.S3.Bucket == "" {
-		fatal("s3 bucket name is required")
+		fatal("bucket name is not set")
 	}
 
 	if config.S3.Key != "" && config.S3.Secret != "" {
@@ -54,7 +53,7 @@ func setupS3(config *Config) {
 
 func perform(cache *Cache, command string) {
 	if err := cache.prepare(); err != nil {
-		log.Println("error:", err)
+		fmt.Println("error:", err)
 		return
 	}
 
@@ -75,17 +74,13 @@ func perform(cache *Cache, command string) {
 }
 
 func main() {
-	args, opts := initOptions()
-	if opts == nil {
-		return
-	}
-
-	config, err := readConfig(opts.Config)
+	args, opts, err := initOptions()
 	if err != nil {
 		fatal(err)
 	}
-
-	setupS3(config)
+	if opts == nil {
+		return
+	}
 
 	if len(args) < 1 {
 		fatal("command required")
@@ -97,6 +92,17 @@ func main() {
 	if _, ok := commands[command]; !ok {
 		fatal("invalid command:" + command)
 	}
+
+	config, err := readConfig(opts.Config)
+	if err != nil {
+		fatal(err)
+	}
+
+	if len(config.Caches) == 0 {
+		fatal("no cache manifests found")
+	}
+
+	setupS3(config)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(len(config.Caches))
