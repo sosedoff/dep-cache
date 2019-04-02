@@ -1,3 +1,4 @@
 .DS_Store
 bin/
 dep-cache
+dist/
