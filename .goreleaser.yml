@@ -1,0 +1,8 @@
+builds:
+  - main: main.go
+    binary: dep-cache
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
