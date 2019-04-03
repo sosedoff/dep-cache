@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -24,21 +25,38 @@ func setupS3(config *Config) {
 		fatal(err)
 	}
 
-	// Load region from metadata
-	meta := ec2metadata.New(sess)
-	if region, err := meta.Region(); err == nil {
-		config.S3.Region = region
-		sess.Config.Region = &region
+	awsmeta := false
+
+	// When AWS keys are not set, load session from environment
+	if config.S3.Key == "" && config.S3.Secret == "" {
+		debug("api keys not provider, fetching aws metadata...")
+		region, err := ec2metadata.New(sess).Region()
+		if err == nil {
+			config.S3.Region = region
+			awsmeta = true
+		} else {
+			debug("aws metadata fetch error: " + err.Error())
+		}
 	}
 
 	if config.S3.Region == "" {
 		fatal("region is not set")
+	} else {
+		sess.Config.Region = aws.String(config.S3.Region)
 	}
+
 	if config.S3.Bucket == "" {
 		fatal("bucket name is not set")
 	}
 
-	if config.S3.Key != "" && config.S3.Secret != "" {
+	if !awsmeta {
+		if config.S3.Key == "" {
+			fatal("access key is not set")
+		}
+		if config.S3.Secret == "" {
+			fatal("secret key is not set")
+		}
+
 		sess.Config.Credentials = credentials.NewStaticCredentials(
 			config.S3.Key,
 			config.S3.Secret,
@@ -58,6 +76,10 @@ func perform(cache *Cache, command string) {
 	}
 
 	switch command {
+	case "status":
+		if err := status(cache); err != nil {
+			fmt.Println("error:", err)
+		}
 	case "upload":
 		if err := upload(cache); err != nil {
 			fmt.Println("error:", err)
@@ -87,7 +109,7 @@ func main() {
 	}
 
 	command := args[0]
-	commands := map[string]bool{"upload": true, "download": true, "reset": true}
+	commands := map[string]bool{"upload": true, "download": true, "reset": true, "status": true}
 
 	if _, ok := commands[command]; !ok {
 		fatal("invalid command:" + command)
@@ -115,6 +137,20 @@ func main() {
 	}
 
 	wg.Wait()
+}
+
+func status(cache *Cache) error {
+	debug("checking %s", cache.Key)
+	exists, err := s3exists(cache.Key)
+	if err != nil {
+		return err
+	}
+	if exists {
+		debug("cache %s exists", cache.Key)
+	} else {
+		debug("cache %s does not exist", cache.Key)
+	}
+	return nil
 }
 
 func upload(cache *Cache) error {
