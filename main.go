@@ -25,38 +25,27 @@ func setupS3(config *Config) {
 		fatal(err)
 	}
 
-	awsmeta := false
-
-	// When AWS keys are not set, load session from environment
-	if config.S3.Key == "" && config.S3.Secret == "" {
-		debug("api keys not provider, fetching aws metadata...")
-		region, err := ec2metadata.New(sess).Region()
-		if err == nil {
-			config.S3.Region = region
-			awsmeta = true
-		} else {
-			debug("aws metadata fetch error: " + err.Error())
-		}
+	if config.S3.Bucket == "" {
+		fatal("bucket name is not set")
 	}
-
 	if config.S3.Region == "" {
 		fatal("region is not set")
 	} else {
 		sess.Config.Region = aws.String(config.S3.Region)
 	}
 
-	if config.S3.Bucket == "" {
-		fatal("bucket name is not set")
-	}
-
-	if !awsmeta {
+	if config.S3.Key == "" && config.S3.Secret == "" {
+		debug("aws credentials are not set, checking for metadata...")
+		if !ec2metadata.New(sess).Available() {
+			fatal("aws metadata is not available")
+		}
+	} else {
 		if config.S3.Key == "" {
 			fatal("access key is not set")
 		}
 		if config.S3.Secret == "" {
 			fatal("secret key is not set")
 		}
-
 		sess.Config.Credentials = credentials.NewStaticCredentials(
 			config.S3.Key,
 			config.S3.Secret,
