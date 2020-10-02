@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -154,7 +155,7 @@ func upload(cache *Cache) error {
 	}
 
 	debug("preparing %s", cache.Key)
-	archivePath := filepath.Join("/tmp", cache.Key)
+	archivePath := filepath.Join("/tmp", strings.ReplaceAll(cache.Key, "/", "_"))
 	defer os.Remove(archivePath)
 
 	if err := archive(cache.Path, archivePath); err != nil {
@@ -166,7 +167,7 @@ func upload(cache *Cache) error {
 }
 
 func download(cache *Cache) error {
-	archivePath := filepath.Join("/tmp", cache.Key)
+	archivePath := filepath.Join("/tmp", strings.ReplaceAll(cache.Key, "/", "_"))
 	defer os.Remove(archivePath)
 
 	debug("checking %s", cache.Key)
