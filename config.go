@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"runtime"
@@ -42,7 +41,7 @@ func replaceEnvVars(input string) string {
 }
 
 func readConfig(path string) (*Config, error) {
-	input, err := ioutil.ReadFile(path)
+	input, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +51,17 @@ func readConfig(path string) (*Config, error) {
 	cfg := &Config{}
 	if err := json.Unmarshal([]byte(newInput), cfg); err != nil {
 		return nil, err
+	}
+
+	if cfg.S3.Key != "" {
+		if err := loadFromFile(cfg.S3.Key, &cfg.S3.Key); err != nil {
+			return nil, err
+		}
+	}
+	if cfg.S3.Secret != "" {
+		if err := loadFromFile(cfg.S3.Secret, &cfg.S3.Secret); err != nil {
+			return nil, err
+		}
 	}
 
 	return cfg, nil
