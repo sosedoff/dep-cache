@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -20,17 +21,17 @@ var (
 	s3bucket  string
 )
 
-func setupS3(config *Config) {
+func setupS3(config *Config) error {
 	sess, err := session.NewSession()
 	if err != nil {
-		fatal(err)
+		return err
 	}
 
 	if config.S3.Bucket == "" {
-		fatal("bucket name is not set")
+		return errors.New("bucket name is not set")
 	}
 	if config.S3.Region == "" {
-		fatal("region is not set")
+		return errors.New("region is not set")
 	} else {
 		sess.Config.Region = aws.String(config.S3.Region)
 	}
@@ -38,14 +39,14 @@ func setupS3(config *Config) {
 	if config.S3.Key == "" && config.S3.Secret == "" {
 		debug("aws credentials are not set, checking for metadata...")
 		if !ec2metadata.New(sess).Available() {
-			fatal("aws metadata is not available")
+			return errors.New("aws metadata is not available")
 		}
 	} else {
 		if config.S3.Key == "" {
-			fatal("access key is not set")
+			return errors.New("access key is not set")
 		}
 		if config.S3.Secret == "" {
-			fatal("secret key is not set")
+			return errors.New("secret key is not set")
 		}
 		sess.Config.Credentials = credentials.NewStaticCredentials(
 			config.S3.Key,
@@ -57,6 +58,8 @@ func setupS3(config *Config) {
 	s3session = sess
 	s3service = s3.New(s3session)
 	s3bucket = config.S3.Bucket
+
+	return nil
 }
 
 func perform(cache *Cache, command string) {
@@ -114,7 +117,9 @@ func main() {
 		fatal("no cache manifests found")
 	}
 
-	setupS3(config)
+	if err := setupS3(config); err != nil {
+		fatal(err.Error())
+	}
 
 	wg := &sync.WaitGroup{}
 	wg.Add(len(config.Caches))
