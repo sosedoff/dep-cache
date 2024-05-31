@@ -44,6 +44,29 @@ For Amazon EC2 users with IAM roles configured: you dont have to set `key`, `sec
 and `region`. Dep cache will automatically pick up configuration from the EC2 environment.
 The only required option is `bucket`.
 
+### Download Policy
+
+For each `cache` entry in the config you can specify a `download_policy` parameter.
+
+Available options are:
+- `default` - Default policy. Always download and extract data into the cache directory.
+- `skip_not_empty` - Skip download if the cache directory already exists and is not empty.
+
+Example:
+
+```json
+{
+  "cache": [
+    {
+      "manifest": "Gemfile.lock",
+      "path": ".bundle",
+      "prefix": "bundler",
+      "download_policy": "skip_not_empty"
+    }
+  ]
+}
+```
+
 ## Usage
 
 Take a look at the example project structure (real files omitted):
@@ -66,7 +89,7 @@ Next, perform download, install and upload of dependencies:
 
 ```bash
 # This will download the archives if they exist in S3
-$ dep-cache download 
+$ dep-cache download
 
 # Install dependencies. These would run super fast if the cache exists
 $ bundle install --path .bundle --jobs=4
