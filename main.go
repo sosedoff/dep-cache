@@ -63,6 +63,11 @@ func setupS3(config *Config) error {
 }
 
 func perform(cache *Cache, command string) {
+	if err := cache.validate(); err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+
 	if err := cache.prepare(); err != nil {
 		fmt.Println("error:", err)
 		return
@@ -172,6 +177,17 @@ func upload(cache *Cache) error {
 }
 
 func download(cache *Cache) error {
+	if cache.DownloadPolicy == downloadPolicySkipNotEmpty {
+		stat, err := os.Stat(cache.Path)
+		if err == nil && stat.IsDir() {
+			entries, err := os.ReadDir(cache.Path)
+			if err == nil && len(entries) == 0 {
+				debug("extract directory %s already exists and not empty, skipping download", cache.Path)
+				return nil
+			}
+		}
+	}
+
 	archivePath := filepath.Join("/tmp", strings.ReplaceAll(cache.Key, "/", "_"))
 	defer os.Remove(archivePath)
 
