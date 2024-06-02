@@ -13,11 +13,17 @@ var (
 	reEnvVar = regexp.MustCompile(`(?i)\$([\w\d\_]+)`)
 )
 
+const (
+	downloadPolicyDefault      = "default"
+	downloadPolicySkipNotEmpty = "skip_not_empty"
+)
+
 type Cache struct {
-	Manifest string `json:"manifest"`
-	Path     string `json:"path"`
-	Prefix   string `json:"prefix"`
-	Key      string `json:"-"`
+	Manifest       string `json:"manifest"`
+	Path           string `json:"path"`
+	Prefix         string `json:"prefix"`
+	DownloadPolicy string `json:"download_policy"`
+	Key            string `json:"-"`
 }
 
 type Config struct {
@@ -65,6 +71,19 @@ func readConfig(path string) (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func (c *Cache) validate() error {
+	if c.DownloadPolicy == "" {
+		c.DownloadPolicy = downloadPolicyDefault
+	}
+
+	switch c.DownloadPolicy {
+	case downloadPolicyDefault, downloadPolicySkipNotEmpty:
+		return nil
+	default:
+		return fmt.Errorf("invalid download policy: %v", c.DownloadPolicy)
+	}
 }
 
 func (c *Cache) prepare() error {
