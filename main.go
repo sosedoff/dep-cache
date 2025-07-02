@@ -113,10 +113,15 @@ func main() {
 	}
 
 	command := args[0]
-	commands := map[string]bool{"upload": true, "download": true, "reset": true, "status": true}
+	commands := map[string]bool{"upload": true, "download": true, "reset": true, "status": true, "version": true}
 
 	if _, ok := commands[command]; !ok {
 		fatal("invalid command:" + command)
+	}
+
+	if command == "version" {
+		fmt.Println(Version)
+		return
 	}
 
 	config, err := readConfig(opts.Config)
