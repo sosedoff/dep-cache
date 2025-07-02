@@ -27,6 +27,8 @@ func setupS3(config *Config) error {
 		return err
 	}
 
+	sess.Config.S3ForcePathStyle = aws.Bool(config.S3.ForcePathStyle)
+
 	if config.S3.Bucket == "" {
 		return errors.New("bucket name is not set")
 	}
@@ -53,6 +55,10 @@ func setupS3(config *Config) error {
 			config.S3.Secret,
 			"",
 		)
+	}
+
+	if config.S3.Endpoint != "" {
+		s3session.Config.Endpoint = aws.String(config.S3.Endpoint)
 	}
 
 	s3session = sess

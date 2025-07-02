@@ -28,10 +28,12 @@ type Cache struct {
 
 type Config struct {
 	S3 struct {
-		Key    string `json:"key"`
-		Secret string `json:"secret"`
-		Region string `json:"region"`
-		Bucket string `json:"bucket"`
+		Key            string `json:"key"`
+		Secret         string `json:"secret"`
+		Region         string `json:"region"`
+		Bucket         string `json:"bucket"`
+		Endpoint       string `json:"endpoint"`
+		ForcePathStyle bool   `json:"force_path_style"`
 	} `json:"s3"`
 	Caches []Cache `json:"cache"`
 }
