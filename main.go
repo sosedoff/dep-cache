@@ -58,7 +58,7 @@ func setupS3(config *Config) error {
 	}
 
 	if config.S3.Endpoint != "" {
-		s3session.Config.Endpoint = aws.String(config.S3.Endpoint)
+		sess.Config.Endpoint = aws.String(config.S3.Endpoint)
 	}
 
 	s3session = sess
