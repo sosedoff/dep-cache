@@ -36,11 +36,11 @@ The example configuration file:
 }
 ```
 
-Instead of putting your real credentials into `key` and `secret` fields you can 
+Instead of putting your real credentials into `key` and `secret` fields you can
 set them with `$CACHE_AWS_KEY` and `$CACHE_AWS_SECRET` respectively. These values
 will be replaced automatically if your system has those set as environment variables.
 
-For Amazon EC2 users with IAM roles configured: you dont have to set `key`, `secret` 
+For Amazon EC2 users with IAM roles configured: you dont have to set `key`, `secret`
 and `region`. Dep cache will automatically pick up configuration from the EC2 environment.
 The only required option is `bucket`.
 
@@ -49,6 +49,7 @@ The only required option is `bucket`.
 For each `cache` entry in the config you can specify a `download_policy` parameter.
 
 Available options are:
+
 - `default` - Default policy. Always download and extract data into the cache directory.
 - `skip_not_empty` - Skip download if the cache directory already exists and is not empty.
 
@@ -66,6 +67,24 @@ Example:
   ]
 }
 ```
+
+## S3 Customization
+
+You can configure AWS S3 service endpoint and other parameters via the following options:
+
+```json
+{
+  "s3": {
+    "endpoint": "https://my-api-endpoint.com",
+    "force_path_style": true
+  }
+}
+```
+
+Options:
+
+- `endpoint` - Custom S3-compatible API URL
+- `force_path_style` - Flag to enforce bucket name in URLs via path instead of subdomain.
 
 ## Usage
 
@@ -85,7 +104,6 @@ package.json
 Use the example configuration file and save it as `.dep-cache.json`.
 
 Next, perform download, install and upload of dependencies:
-
 
 ```bash
 # This will download the archives if they exist in S3
