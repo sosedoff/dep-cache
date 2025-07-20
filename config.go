@@ -18,14 +18,6 @@ const (
 	downloadPolicySkipNotEmpty = "skip_not_empty"
 )
 
-type Cache struct {
-	Manifest       string `json:"manifest"`
-	Path           string `json:"path"`
-	Prefix         string `json:"prefix"`
-	DownloadPolicy string `json:"download_policy"`
-	Key            string `json:"-"`
-}
-
 type Config struct {
 	S3     S3Config `json:"s3"`
 	Caches []Cache  `json:"cache"`
@@ -38,6 +30,14 @@ type S3Config struct {
 	Bucket         string `json:"bucket"`
 	Endpoint       string `json:"endpoint"`
 	ForcePathStyle bool   `json:"force_path_style"`
+}
+
+type Cache struct {
+	Manifest       string `json:"manifest"`
+	Path           string `json:"path"`
+	Prefix         string `json:"prefix"`
+	DownloadPolicy string `json:"download_policy"`
+	Key            string `json:"-"`
 }
 
 func replaceEnvVars(input string) string {
