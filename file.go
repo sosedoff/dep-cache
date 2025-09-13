@@ -36,3 +36,9 @@ func extract(filename string, path string) error {
 	}
 	return exec.Command("tar", "-xzf", filename, "-C", path).Run()
 }
+
+func tarBinaryExists() bool {
+	cmd := exec.Command("tar", "--version")
+	cmd.Stderr = os.Stderr
+	return cmd.Run() == nil
+}
