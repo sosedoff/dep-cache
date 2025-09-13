@@ -133,6 +133,11 @@ func main() {
 		fatal("no cache manifests found")
 	}
 
+	// Check if archive tool (tar) exists in the system
+	if !tarBinaryExists() {
+		fatal("tar tool is not found in the system, aborting")
+	}
+
 	if err := setupS3(config); err != nil {
 		fatal(err.Error())
 	}
